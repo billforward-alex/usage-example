@@ -37,7 +37,7 @@ public class App
         EntityPagingHelper<Invoice> pagingHelper = new EntityPagingHelper<>(e -> {
             System.err.println("An error occurred");
             System.err.println(e);
-        });
+        }, 1, 10);
         return pagingHelper.fetchFirstEntityMeetingCondition(invoice -> {
             System.out.println(invoice);
             return false;

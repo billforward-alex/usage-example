@@ -13,9 +13,20 @@ import java.util.stream.Stream;
  */
 public class EntityPagingHelper<T extends BillingEntity> {
     protected EntityPagingHelper.ErrorHandler errorHandler;
+    protected int pageSize;
+    protected int pageLimit;
 
-    public EntityPagingHelper(EntityPagingHelper.ErrorHandler errorHandler) {
+    public EntityPagingHelper() {
+        this(e -> {
+            System.err.println("An error occurred");
+            System.err.println(e);
+        }, 10, 200);
+    }
+
+    public EntityPagingHelper(EntityPagingHelper.ErrorHandler errorHandler, int pageSize, int pageLimit) {
         this.errorHandler = errorHandler;
+        this.pageSize = pageSize;
+        this.pageLimit = pageLimit;
     }
 
     public T fetchFirstEntityMeetingCondition(EntityReckoner<T> entityReckoner, EntityFetcher<T> entityFetcher, String nominalInput) {
@@ -43,12 +54,19 @@ public class EntityPagingHelper<T extends BillingEntity> {
     }
 
     public Iterable<T[]> fetchPages(EntityFetcher<T> entityFetcher, String nominalInput) {
-        int pageLimit = 1;
-        int pageSize = 1;
         return new BillForwardGenerator<T[]>(errorHandler) {
             @Override protected void runThrows() throws BillforwardException {
                 for (int i = 0; i < pageLimit; i++) {
-                    yield(getPage(entityFetcher, nominalInput, i, pageSize));
+                    T[] page = getPage(entityFetcher, nominalInput, i, pageSize);
+                    if (page == null || page.length < 1) {
+                        // empty page; we're done here
+                        break;
+                    }
+                    yield(page);
+                    if (page.length < pageSize) {
+                        // incomplete page; we're done here
+                        break;
+                    }
                 }
             }
         };
