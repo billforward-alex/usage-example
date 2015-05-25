@@ -43,7 +43,7 @@ public class App
         if (currentInvoice.getInitialInvoice()) {
             throw new Exception("This is the first invoice; no previous invoice will exist.");
         }
-        int pageSize = 1;
+        int pageSize = 20;
         int pageLimit = 100;
         for (int i=0; i<pageLimit; i++) {
             Invoice[] page = getPage(currentInvoice.getSubscriptionID(), i, pageSize);
