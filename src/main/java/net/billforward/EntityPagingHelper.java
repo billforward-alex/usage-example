@@ -1,6 +1,5 @@
 package net.billforward;
 
-import com.zoominfo.util.yieldreturn.Generator;
 import net.billforward.exception.BillforwardException;
 import net.billforward.model.BillingEntity;
 
@@ -13,8 +12,14 @@ import java.util.stream.Stream;
  * Created by birch on 25/05/2015.
  */
 public class EntityPagingHelper<T extends BillingEntity> {
-    public T fetchFirstEntityMeetingCondition(EntityReckoner<T> entityReckoner, EntityFetcher<T> entityFetcher, String nominalInput, ErrorHandler errorHandler) throws BillforwardException {
-        Iterator<T> iterator = fetchEntities(entityFetcher, nominalInput, errorHandler).iterator();
+    protected EntityPagingHelper.ErrorHandler errorHandler;
+
+    public EntityPagingHelper(EntityPagingHelper.ErrorHandler errorHandler) {
+        this.errorHandler = errorHandler;
+    }
+
+    public T fetchFirstEntityMeetingCondition(EntityReckoner<T> entityReckoner, EntityFetcher<T> entityFetcher, String nominalInput) {
+        Iterator<T> iterator = fetchEntities(entityFetcher, nominalInput).iterator();
         while(iterator.hasNext()) {
             T candidateEntity = iterator.next();
             if (entityReckoner.suffices(candidateEntity)) {
@@ -24,10 +29,10 @@ public class EntityPagingHelper<T extends BillingEntity> {
         return null;
     }
 
-    public Iterable<T> fetchEntities(EntityFetcher<T> entityFetcher, String nominalInput, ErrorHandler errorHandler) {
-        return new BillForwardGenerator<T>() {
+    public Iterable<T> fetchEntities(EntityFetcher<T> entityFetcher, String nominalInput) {
+        return new BillForwardGenerator<T>(errorHandler) {
             @Override protected void runThrows() throws BillforwardException {
-                Iterator<T[]> iterator = fetchPages(entityFetcher, nominalInput, errorHandler).iterator();
+                Iterator<T[]> iterator = fetchPages(entityFetcher, nominalInput).iterator();
                 while(iterator.hasNext()) {
                     T[] page = iterator.next();
                     Arrays.stream(page)
@@ -37,10 +42,10 @@ public class EntityPagingHelper<T extends BillingEntity> {
         };
     }
 
-    public Iterable<T[]> fetchPages(EntityFetcher<T> entityFetcher, String nominalInput, ErrorHandler errorHandler) {
+    public Iterable<T[]> fetchPages(EntityFetcher<T> entityFetcher, String nominalInput) {
         int pageLimit = 1;
         int pageSize = 1;
-        return new BillForwardGenerator<T[]>() {
+        return new BillForwardGenerator<T[]>(errorHandler) {
             @Override protected void runThrows() throws BillforwardException {
                 for (int i = 0; i < pageLimit; i++) {
                     yield(getPage(entityFetcher, nominalInput, i, pageSize));
@@ -50,7 +55,7 @@ public class EntityPagingHelper<T extends BillingEntity> {
     }
 
     public interface EntityReckoner<T> {
-        boolean suffices(T entity) throws BillforwardException;
+        boolean suffices(T entity);
     }
 
     public interface EntityFetcher<T> {
@@ -58,7 +63,7 @@ public class EntityPagingHelper<T extends BillingEntity> {
     }
 
     public interface ErrorHandler {
-        BillforwardException handleError(BillforwardException e);
+        void handleError(BillforwardException e);
     }
 
     public T[] getPage(EntityFetcher<T> entityFetcher, String nominalInput, int page, int pageSize) throws BillforwardException {

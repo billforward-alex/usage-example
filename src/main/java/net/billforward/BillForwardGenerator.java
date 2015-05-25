@@ -1,20 +1,27 @@
 package net.billforward;
 
-import com.zoominfo.util.yieldreturn.Generator;
 import net.billforward.exception.BillforwardException;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by birch on 25/05/2015.
  */
-public abstract class BillForwardGenerator<T> extends Generator<T> {
-    @Override
-    protected void run() {
-        try {
-            runThrows();
-        } catch (BillforwardException e) {
-            return;
-        }
+public class BillForwardGenerator<T> extends AbstractBillForwardGenerator<T> {
+    protected EntityPagingHelper.ErrorHandler errorHandler;
+
+    public BillForwardGenerator(EntityPagingHelper.ErrorHandler errorHandler) {
+        super();
+        this.errorHandler = errorHandler;
     }
 
-    protected abstract void runThrows() throws BillforwardException;
+    @Override
+    protected void handleError(BillforwardException e) {
+        errorHandler.handleError(e);
+    }
+
+    @Override
+    protected void runThrows() throws BillforwardException {
+        // extend this please
+        throw new NotImplementedException();
+    }
 }

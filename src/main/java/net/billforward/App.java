@@ -33,14 +33,15 @@ public class App
     }
 
 
-    public void getPreviousInvoice(Invoice currentInvoice) throws BillforwardException {
-        //fetchEntitiesUntilConditionFulfilled<Invoice>(currentInvoice.getSubscriptionID());
-        EntityPagingHelper<Invoice> pagingHelper = new EntityPagingHelper<>();
-        Iterator<Invoice> iterator = pagingHelper.fetchEntities(Invoice::getBySubscriptionID, currentInvoice.getSubscriptionID()).iterator();
-        while(iterator.hasNext()) {
-            Invoice candidateInvoice = iterator.next();
-
-        }
+    public Invoice getPreviousInvoice(Invoice currentInvoice) {
+        EntityPagingHelper<Invoice> pagingHelper = new EntityPagingHelper<>(e -> {
+            System.err.println("An error occurred");
+            System.err.println(e);
+        });
+        return pagingHelper.fetchFirstEntityMeetingCondition(invoice -> {
+            System.out.println(invoice);
+            return false;
+        }, Invoice::getBySubscriptionID, currentInvoice.getSubscriptionID());
 
         //System.out.println(Arrays.toString(i));
     }
