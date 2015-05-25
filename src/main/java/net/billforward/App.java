@@ -6,9 +6,7 @@ import net.billforward.model.BillingEntity;
 import net.billforward.model.Invoice;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * Hello world!
@@ -28,21 +26,27 @@ public class App
         }
     }
 
-    public static Invoice getCurrentInvoice() throws CardException, APIException, AuthenticationException, InvalidRequestException, APIConnectionException {
+    public static Invoice getCurrentInvoice() throws BillforwardException {
         return Invoice.getByID("INV-0A46471A-5702-49E2-AED4-3DBE57E7");
     }
 
 
-    public static void getPreviousInvoice(Invoice currentInvoice) throws CardException, APIException, AuthenticationException, InvalidRequestException, APIConnectionException {
+    public static void getPreviousInvoice(Invoice currentInvoice) throws BillforwardException {
         //fetchEntitiesUntilConditionFulfilled<Invoice>(currentInvoice.getSubscriptionID());
+        EntityPagingHelper<Invoice> pagingHelper = new EntityPagingHelper<>();
+        Iterator<Invoice> iterator = pagingHelper.fetchEntities(Invoice::getBySubscriptionID, currentInvoice.getSubscriptionID()).iterator();
+        while(iterator.hasNext()) {
+
+        }
+
         //System.out.println(Arrays.toString(i));
     }
 
     public static class EntityPagingHelper<T extends BillingEntity> {
-        public Iterable<T> fetchEntitiesUntilConditionFulfilled(EntityFetcher<T> entityFetcher, String nominalInput, EntitySuitableLambda<Invoice> condition) {
+        public Iterable<T> fetchEntities(EntityFetcher<T> entityFetcher, String nominalInput) {
             return new Generator<T>() {
                 @Override protected void run() {
-                    Iterator<T[]> iterator = fetchPagesUntilConditionFulfilled(entityFetcher, nominalInput).iterator();
+                    Iterator<T[]> iterator = fetchPages(entityFetcher, nominalInput).iterator();
                     while(iterator.hasNext()) {
                         T[] page = iterator.next();
                         Arrays.stream(page)
@@ -52,7 +56,7 @@ public class App
             };
         }
 
-        public Iterable<T[]> fetchPagesUntilConditionFulfilled(EntityFetcher<T> entityFetcher, String nominalInput) {
+        public Iterable<T[]> fetchPages(EntityFetcher<T> entityFetcher, String nominalInput) {
             int pageLimit = 1;
             int pageSize = 1;
             return new Generator<T[]>() {
@@ -68,15 +72,11 @@ public class App
             };
         }
 
-        interface EntitySuitableLambda<T> {
-            boolean run(T input);
+        public interface EntityFetcher<T> {
+            T[] run(String nominalInput) throws BillforwardException;
         }
 
-        interface EntityFetcher<T> {
-            T[] run(String nominalInput);
-        }
-
-        public T[] getPage(EntityFetcher<T> entityFetcher, String nominalInput, int page, int pageSize) throws CardException, APIException, AuthenticationException, InvalidRequestException, APIConnectionException {
+        public T[] getPage(EntityFetcher<T> entityFetcher, String nominalInput, int page, int pageSize) throws BillforwardException {
             String queryString = String.format("%s?%s", nominalInput,
                     Stream.of(
                             new AbstractMap.SimpleEntry<>("records", pageSize),
@@ -84,9 +84,7 @@ public class App
                             new AbstractMap.SimpleEntry<>("order_by", "created"),
                             new AbstractMap.SimpleEntry<>("order", "DESC"),
                             new AbstractMap.SimpleEntry<>("include_retired", false)
-                    ).map(x -> x.toString()).reduce((x, y) -> {
-                        return String.format("%s&%s", x, y);
-                    }).get()
+                    ).map(x -> x.toString()).reduce((x, y) -> String.format("%s&%s", x, y)).get()
             );
             return entityFetcher.run(queryString);
         };
