@@ -22,15 +22,19 @@ public class App
         BillForwardClient.makeDefaultClient("48ccf496-26b9-42f5-b11e-56a6a2171db8", "http://local.billforward.net:8089/RestAPI");
 
         try {
-            getPreviousInvoice();
+            getPreviousInvoice(getCurrentInvoice());
         } catch(Exception e) {
             System.err.println("Sad trombone :(");
             System.err.println(e);
         }
     }
-    public static void getPreviousInvoice() throws CardException, APIException, AuthenticationException, InvalidRequestException, APIConnectionException {
-//        Invoice i = Invoice.getByID("INV-0A46471A-5702-49E2-AED4-3DBE57E7");
 
+    public static Invoice getCurrentInvoice() throws CardException, APIException, AuthenticationException, InvalidRequestException, APIConnectionException {
+        return Invoice.getByID("INV-0A46471A-5702-49E2-AED4-3DBE57E7");
+    }
+
+
+    public static void getPreviousInvoice(Invoice currentInvoice) throws CardException, APIException, AuthenticationException, InvalidRequestException, APIConnectionException {
         String queryString = String.format("?%s", Stream.of(
                 new AbstractMap.SimpleEntry<>("records", 1),
                 new AbstractMap.SimpleEntry<>("offset", 0),
@@ -40,7 +44,7 @@ public class App
         ).map(x -> x.toString()).reduce((x, y) -> {
             return String.format("%s&%s", x, y);
         }).get());
-        Invoice[] i = Invoice.getBySubscriptionID("SUB-4A1981A5-4816-47F2-AC5B-7B1B46C5");
-        //System.out.println(Arrays.toString(i));
+        Invoice[] i = Invoice.getBySubscriptionID(currentInvoice.getSubscriptionID());
+        System.out.println(Arrays.toString(i));
     }
 }
