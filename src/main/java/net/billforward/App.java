@@ -21,7 +21,7 @@ public class App
         App myApp = new App();
 
         try {
-            myApp.getPreviousInvoice(getCurrentInvoice());
+            System.out.println(myApp.getPreviousInvoice(getCurrentInvoice()));
         } catch(Exception e) {
             System.err.println("Sad trombone :(");
             System.err.println(e);
@@ -37,11 +37,11 @@ public class App
         EntityPagingHelper<Invoice> pagingHelper = new EntityPagingHelper<>(e -> {
             System.err.println("An error occurred");
             System.err.println(e);
-        }, 1, 10);
-        return pagingHelper.fetchFirstEntityMeetingCondition(invoice -> {
-            System.out.println(invoice);
-            return false;
-        }, Invoice::getBySubscriptionID, currentInvoice.getSubscriptionID());
+        }, 10, 200);
+        return pagingHelper.fetchFirstEntityMeetingCondition(invoice -> !invoice.getID().equalsIgnoreCase(currentInvoice.getID())
+                && invoice.getPeriodStart().before(currentInvoice.getPeriodStart())
+                && invoice.getPeriodEnd().equals(currentInvoice.getPeriodStart())
+                && invoice.getType().equals(Invoice.InvoiceType.Subscription), Invoice::getBySubscriptionID, currentInvoice.getSubscriptionID());
 
         //System.out.println(Arrays.toString(i));
     }
