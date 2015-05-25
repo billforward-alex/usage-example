@@ -36,6 +36,7 @@ public class App
         EntityPagingHelper<Invoice> pagingHelper = new EntityPagingHelper<>();
         Iterator<Invoice> iterator = pagingHelper.fetchEntities(Invoice::getBySubscriptionID, currentInvoice.getSubscriptionID()).iterator();
         while(iterator.hasNext()) {
+            Invoice candidateInvoice = iterator.next();
 
         }
 
@@ -43,6 +44,17 @@ public class App
     }
 
     public static class EntityPagingHelper<T extends BillingEntity> {
+        public T fetchFirstEntityMeetingCondition(EntityReckoner<T> entityReckoner, EntityFetcher<T> entityFetcher, String nominalInput) throws BillforwardException {
+            Iterator<T> iterator = fetchEntities(entityFetcher, nominalInput).iterator();
+            while(iterator.hasNext()) {
+                T candidateEntity = iterator.next();
+                if (entityReckoner.suffices(candidateEntity)) {
+                    return candidateEntity;
+                }
+            }
+            return null;
+        }
+
         public Iterable<T> fetchEntities(EntityFetcher<T> entityFetcher, String nominalInput) {
             return new Generator<T>() {
                 @Override protected void run() {
@@ -70,6 +82,10 @@ public class App
                     }
                 }
             };
+        }
+
+        public interface EntityReckoner<T> {
+            boolean suffices(T entity) throws BillforwardException;
         }
 
         public interface EntityFetcher<T> {
