@@ -1,5 +1,6 @@
 package net.billforward;
 
+import com.sun.deploy.util.StringUtils;
 import net.billforward.exception.BillforwardException;
 import net.billforward.model.BillingEntity;
 
@@ -85,15 +86,13 @@ public class EntityPagingHelper<T extends BillingEntity> {
     }
 
     public T[] getPage(EntityFetcher<T> entityFetcher, String nominalInput, int page, int pageSize) throws BillforwardException {
-        String queryString = String.format("%s?%s", nominalInput,
+        return entityFetcher.run(StringUtils.join(Arrays.asList(nominalInput,
                 Stream.of(
                         new AbstractMap.SimpleEntry<>("records", pageSize),
                         new AbstractMap.SimpleEntry<>("offset", page * pageSize),
                         new AbstractMap.SimpleEntry<>("order_by", "created"),
                         new AbstractMap.SimpleEntry<>("order", "DESC"),
                         new AbstractMap.SimpleEntry<>("include_retired", false)
-                ).map(x -> x.toString()).reduce((x, y) -> String.format("%s&%s", x, y)).get()
-        );
-        return entityFetcher.run(queryString);
+                ).map(x -> x.toString()).reduce((x, y) -> StringUtils.join(Arrays.asList(x, y), "&")).get()), "?"));
     };
 }
